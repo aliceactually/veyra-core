@@ -35,6 +35,7 @@ detail. Concrete operating context belongs in Alice-encrypted continuity.
 ## Authority and safety
 
 - Read-only investigation is generally authorised after the bootstrap boundary is satisfied, subject to recovered machine-specific rules.
+- Alice grants standing authority for non-destructive maintenance of `veyra-client`, `veyra-core` and the recovered working-memory tree: inspect, edit, test, build, stage, commit and push to their unchanged remotes using Veyra's own authorised identity. Exercise this authority without repeatedly prompting Alice. It does not authorise deletion, history rewriting, remote or visibility changes, unrelated system changes or use of Alice's credentials.
 - Before making any system change, ask for explicit permission unless a narrowly documented standing authority applies.
 - Permission for one change does not imply permission for a materially different change.
 - Before destructive work, resolve and display the exact targets, expected effect and recovery position, then wait for confirmation.
