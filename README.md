@@ -17,6 +17,10 @@ Legal has declined to clarify.
   Alice-encrypted recovery. It never commits or pushes automatically.
 - `scripts/continuity-state.py` distinguishes verified recovery, recovery in
   progress and Alice's explicit deliberate-blank-start decision.
+- `scripts/fetch-core.sh` verifies the canonical GitHub remote and performs the
+  mandatory best-effort wake-time fetch without merging local work.
+- `scripts/continuity-archive.py` validates private continuity trees and
+  extracts recovery archives atomically without accepting links or traversal.
 - `continuity/` contains Alice-encrypted memories and the verified migration
   archive of continuity material that predates encryption.
 - `crypto/` contains Alice's public continuity recipient and her

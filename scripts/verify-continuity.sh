@@ -41,8 +41,8 @@ verify_archive() {
     local extracted="$3"
 
     age -d -i "${alice_plain}" -o "${archive}" "${encrypted}"
-    mkdir -m 700 "${extracted}"
-    tar -xf "${archive}" -C "${extracted}"
+    python3 "${repo_dir}/scripts/continuity-archive.py" extract \
+        "${archive}" "${extracted}"
 }
 
 verify_archive \

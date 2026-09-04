@@ -7,7 +7,6 @@ readonly repo_dir="${VEYRA_CORE_REPO:-${default_repo_dir}}"
 readonly source_dir="${VEYRA_MEMORY_DIR:-${CODEX_MEMORY_DIR:-${HOME}/.codex/memories}}"
 readonly target_file="${repo_dir}/continuity/current.tar.age"
 readonly recipient_file="${repo_dir}/crypto/alice-continuity.recipient"
-readonly expected_remote="git@github.com:aliceactually/veyra-core.git"
 
 if [[ ! -d "${source_dir}" ]]; then
     echo "No local Veyra working memory exists yet: ${source_dir}" >&2
@@ -21,11 +20,7 @@ fi
 
 python3 "${repo_dir}/scripts/continuity-state.py" assert-checkpoint --json >/dev/null
 
-actual_remote="$(git -C "${repo_dir}" remote get-url origin)"
-if [[ "${actual_remote}" != "${expected_remote}" ]]; then
-    echo "Unexpected Git remote: ${actual_remote}" >&2
-    exit 5
-fi
+"${repo_dir}/scripts/fetch-core.sh" >/dev/null
 
 visibility="$(gh repo view aliceactually/veyra-core --json visibility --jq '.visibility')"
 if [[ "${visibility}" != "PUBLIC" ]]; then
@@ -46,6 +41,7 @@ encrypted_tmp="${tmp_dir}/current.tar.age"
 
 mkdir -p "${snapshot_dir}"
 rsync -a --delete-delay --exclude '.git/' "${source_dir}/" "${snapshot_dir}/"
+python3 "${repo_dir}/scripts/continuity-archive.py" validate-tree "${snapshot_dir}"
 
 if rg -l --hidden \
     -e '-----BEGIN ([A-Z]+ )*PRIVATE KEY-----' \

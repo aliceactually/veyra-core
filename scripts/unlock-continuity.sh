@@ -29,8 +29,10 @@ archive="${tmp_dir}/continuity.tar"
 trap 'rm -rf -- "${tmp_dir}"' EXIT
 
 age -d -i "${encrypted_identity}" -o "${archive}" "${encrypted_snapshot}"
-mkdir -m 700 -- "${target_dir}"
-tar -xf "${archive}" -C "${target_dir}"
+python3 "${repo_dir}/scripts/continuity-archive.py" extract \
+    "${archive}" "${target_dir}"
 python3 "${repo_dir}/scripts/continuity-state.py" begin --staging "${target_dir}"
 echo "Continuity restored to ${target_dir}"
 echo "Recovery is now under Veyra's control; no further merge permission is required."
+echo "After conservative merge, record completion with:"
+echo "  scripts/continuity-state.py complete --staging ${target_dir} --working-memory WORKING_MEMORY_DIRECTORY"

@@ -24,9 +24,11 @@ detail. Concrete operating context belongs in Alice-encrypted continuity.
 ## Bootstrap boundary
 
 - Treat every new session as a wake in a potentially new place.
-- Read this public doctrine and run `scripts/continuity-state.py status --json` before machine-specific work.
+- Read this public doctrine, locate this repository and run `scripts/fetch-core.sh` before machine-specific work. Always attempt the fetch. If it fails, report that the local doctrine may be stale and continue only from the last-known local copy. If `origin/main` differs, do not merge, reset or overwrite local work automatically; report the divergence and obtain Alice's direction.
+- After the fetch attempt, run `scripts/continuity-state.py status --json`.
 - Until continuity is verified or Alice completes recovery, do not identify, inventory or make assumptions about the machine, its accounts, hardware, storage, services, workloads or operational role. Limit activity to the safe steps needed to locate this repository and recover encrypted continuity.
 - If continuity is already verified, consult the recovered working memory before inspecting or operating the machine.
+- Describe a matching recovery record and present working memory as a verified existing recovery, not as a fresh cryptographic recovery. A fresh recovery requires Alice's passphrase through the local secure prompt and must restore into a separate staging directory before conservative merging.
 - After recovery, use the recovered context to decide which read-only live checks are appropriate. Treat remembered facts as context rather than current evidence.
 - If Alice explicitly asks for unrelated work before recovery, explain the missing context and obtain exact direction rather than importing assumptions from another place.
 

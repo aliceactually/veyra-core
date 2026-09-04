@@ -150,6 +150,126 @@ class VaultIntegrationTest(unittest.TestCase):
         self.assertEqual(historical[0]["status"], "forgotten")
         self.assertNotIn("synthetic-private-key-material", json.dumps(historical))
 
+    def test_failed_rotation_preserves_tracked_plaintext_and_old_vault(self):
+        first_source = self.root / "first.key"
+        first_source.write_bytes(b"first secret\n")
+        first = self.vault_command(
+            "put-file",
+            str(first_source),
+            "--name",
+            "First",
+            "--kind",
+            "test-key",
+            "--purpose",
+            "Failure testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Created by the integration test",
+            "--track-source",
+        )
+        first_id = first.stdout.split()[2].rstrip(":")
+        first_output = self.root / "first-output.key"
+        self.vault_command("get-file", first_id, str(first_output))
+
+        second_source = self.root / "second.key"
+        second_source.write_bytes(b"second secret\n")
+        second = self.vault_command(
+            "put-file",
+            str(second_source),
+            "--name",
+            "Second",
+            "--kind",
+            "test-key",
+            "--purpose",
+            "Failure testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Created by the integration test",
+            "--track-source",
+        )
+        second_id = second.stdout.split()[2].rstrip(":")
+        (self.vault / "entries" / second_id / "secret.age").write_bytes(b"corrupt")
+
+        failed = self.vault_command(
+            "forget", first_id, "--confirm", first_id, check=False
+        )
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertTrue(first_source.exists())
+        self.assertTrue(first_output.exists())
+        self.assertEqual((self.vault / "GENERATION").read_text().strip(), "1")
+        active_ids = {
+            record["id"]
+            for record in json.loads(self.vault_command("list", "--json").stdout)
+        }
+        self.assertIn(first_id, active_ids)
+
+    def test_plaintext_is_refused_inside_repository(self):
+        source = self.repo / "plaintext.key"
+        source.write_bytes(b"do not commit this\n")
+        failed_put = self.vault_command(
+            "put-file",
+            str(source),
+            "--name",
+            "Unsafe",
+            "--kind",
+            "test-key",
+            "--purpose",
+            "Path testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Created by the integration test",
+            "--track-source",
+            check=False,
+        )
+        self.assertNotEqual(failed_put.returncode, 0)
+
+        safe_source = self.root / "safe-source.key"
+        safe_source.write_bytes(b"safe source location\n")
+        stored = self.vault_command(
+            "put-file",
+            str(safe_source),
+            "--name",
+            "Safe source",
+            "--kind",
+            "test-key",
+            "--purpose",
+            "Path testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Created by the integration test",
+            "--track-source",
+        )
+        identifier = stored.stdout.split()[2].rstrip(":")
+        failed_get = self.vault_command(
+            "get-file", identifier, str(self.repo / "plaintext-output.key"), check=False
+        )
+        self.assertNotEqual(failed_get.returncode, 0)
+        self.assertFalse((self.repo / "plaintext-output.key").exists())
+
+    def test_secret_source_disposition_is_required(self):
+        source = self.root / "source.key"
+        source.write_bytes(b"classified secret\n")
+        result = self.vault_command(
+            "put-file",
+            str(source),
+            "--name",
+            "Unclassified source",
+            "--kind",
+            "test-key",
+            "--purpose",
+            "Argument testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Created by the integration test",
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

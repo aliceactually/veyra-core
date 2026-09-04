@@ -113,13 +113,22 @@ def evaluate(record, archive):
         return "needs_recovery"
     disposition = record.get("disposition")
     if disposition == "blank_start":
+        if record.get("hostname") != socket.gethostname():
+            return "recovery_required"
+        if record.get("archive_sha256") != archive["sha256"]:
+            return "recovery_required"
         return "deliberate_blank_start"
     if disposition == "recovery_in_progress":
         return "recovery_in_progress"
     if disposition == "recovered":
-        if archive["exists"] and record.get("archive_sha256") == archive["sha256"]:
-            return "recovered"
-        return "recovery_required"
+        if not archive["exists"] or record.get("archive_sha256") != archive["sha256"]:
+            return "recovery_required"
+        if record.get("hostname") != socket.gethostname():
+            return "recovery_required"
+        working_memory = record.get("working_memory_directory")
+        if not isinstance(working_memory, str) or not Path(working_memory).is_dir():
+            return "recovery_required"
+        return "recovered"
     raise ValueError("unknown continuity disposition")
 
 
@@ -135,6 +144,13 @@ def require_staging(value):
     return staging
 
 
+def require_recovery_tree(value):
+    staging = require_staging(value)
+    if not (staging / "memory-snapshot").is_dir():
+        raise ValueError(f"recovery staging tree is malformed: {staging}")
+    return staging
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -144,6 +160,7 @@ def main():
     begin.add_argument("--staging", required=True)
     complete = subparsers.add_parser("complete")
     complete.add_argument("--staging", required=True)
+    complete.add_argument("--working-memory", required=True)
     checkpoint = subparsers.add_parser("checkpoint")
     checkpoint.add_argument("--working-memory", required=True)
     blank_start = subparsers.add_parser("blank-start")
@@ -172,10 +189,11 @@ def main():
         record = write_record("recovered", archive, working_memory=working_memory)
     else:
         require_archive(archive)
-        staging = require_staging(args.staging)
+        staging = require_recovery_tree(args.staging)
         if args.command == "begin":
             record = write_record("recovery_in_progress", archive, staging)
         else:
+            working_memory = require_staging(args.working_memory)
             previous = read_record()
             if previous is None or previous.get("disposition") != "recovery_in_progress":
                 raise ValueError("recovery completion requires a recorded recovery in progress")
@@ -183,7 +201,9 @@ def main():
                 raise ValueError("encrypted memory vault changed during recovery")
             if Path(previous.get("staging_directory", "")).resolve() != staging:
                 raise ValueError("recovery staging directory does not match the recorded unlock")
-            record = write_record("recovered", archive, staging)
+            record = write_record(
+                "recovered", archive, staging, working_memory=working_memory
+            )
 
     output = {
         "archive": archive,

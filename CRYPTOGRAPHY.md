@@ -66,13 +66,18 @@ On a recovered machine, Alice can use her passphrase-protected identity to
 decrypt `vault/recovery/current-identity.age`, then install the recovered
 Veyra identity with `scripts/recover-vault-identity.sh`. Private continuity
 can be restored with `scripts/unlock-continuity.sh TARGET`.
+The target must not exist. Archive members are restricted to regular files and
+directories, extracted into a private temporary sibling, and renamed into place
+only after complete validation. Links, special files, absolute paths, parent
+traversal and duplicate paths are rejected.
 
 ## Secret operations
 
 ```text
 scripts/veyra-vault.py list [--all] [--json]
 scripts/veyra-vault.py put-file FILE --name NAME --kind KIND \
-  --purpose PURPOSE --scope SCOPE --authorisation AUTHORISATION
+  --purpose PURPOSE --scope SCOPE --authorisation AUTHORISATION \
+  (--track-source | --leave-source-untracked)
 scripts/veyra-vault.py get-file ID OUTPUT
 scripts/veyra-vault.py forget ID --confirm ID
 scripts/veyra-vault.py rotate
@@ -83,10 +88,19 @@ Secret values are never emitted by `list` or `audit`. `get-file` writes an
 exact file with mode `0600` and refuses to overwrite it unless `--force` is
 supplied.
 
+`put-file` requires the source to be classified explicitly. Use `--track-source`
+for a Veyra-controlled materialised copy that `forget` must remove, or
+`--leave-source-untracked` when the source is controlled by Alice or another
+external owner and must not be removed. Plaintext secret sources and outputs are
+refused anywhere inside the Veyra Core repository.
+
 Forgetting a secret also rotates Veyra's vault identity and re-encrypts every
 surviving entry. The old local identity is removed. Old Git artefacts can then
 be recovered only through Alice's encrypted continuity boundary, which makes
 such recovery a new, explicit grant from Alice.
+The replacement vault is fully staged before tracked plaintext copies are moved
+into private quarantine. A failed rotation restores the prior vault, identity
+and tracked copies rather than leaving an intentionally partial operation.
 
 ## Public lineage
 

@@ -117,6 +117,14 @@ def atomic_write(path: Path, data: bytes, mode: int) -> None:
         raise
 
 
+def require_outside_repository(path: Path, description: str) -> None:
+    try:
+        path.relative_to(REPO)
+    except ValueError:
+        return
+    raise VaultError(f"Refusing a plaintext {description} inside the Veyra repository: {path}")
+
+
 def load_metadata(path: Path, identity: Path = IDENTITY) -> dict[str, object]:
     try:
         value = json.loads(decrypt(path, identity).decode("utf-8"))
@@ -193,6 +201,7 @@ def command_put(args: argparse.Namespace) -> None:
     source = Path(args.file).expanduser().resolve()
     if not source.is_file():
         raise VaultError(f"Secret source is not a regular file: {source}")
+    require_outside_repository(source, "secret source")
     value = source.read_bytes()
     if not value:
         raise VaultError("Refusing to store an empty secret")
@@ -232,6 +241,7 @@ def command_get(args: argparse.Namespace) -> None:
     if entry.parent != ENTRIES or not entry.is_dir():
         raise VaultError(f"Unknown active secret: {args.id}")
     output = Path(args.output).expanduser().resolve()
+    require_outside_repository(output, "secret output")
     if output.exists() and not args.force:
         raise VaultError(f"Refusing to overwrite existing output: {output}")
     record = load_metadata(entry / "metadata.age")
@@ -267,6 +277,8 @@ def rotate(forget_id: str | None = None) -> None:
     if forget_id is not None and all(path.name != forget_id for path, _ in active):
         raise VaultError(f"Unknown active secret: {forget_id}")
 
+    resolved_paths: list[tuple[Path, int]] = []
+    forgotten_value: bytes | None = None
     if forget_id is not None:
         _, forgotten_record = next(
             value for value in active if value[0].name == forget_id
@@ -275,7 +287,10 @@ def rotate(forget_id: str | None = None) -> None:
         paths = forgotten_record.get("materialised_paths", [])
         if not isinstance(expected_hash, str) or not isinstance(paths, list):
             raise VaultError(f"Invalid materialisation inventory: {forget_id}")
-        resolved_paths = []
+        forgotten_entry = next(value[0] for value in active if value[0].name == forget_id)
+        forgotten_value = decrypt(forgotten_entry / "secret.age")
+        if hashlib.sha256(forgotten_value).hexdigest() != expected_hash:
+            raise VaultError(f"Secret content hash mismatch: {forget_id}")
         for value in paths:
             if not isinstance(value, str):
                 raise VaultError(f"Invalid materialised path: {forget_id}")
@@ -289,10 +304,7 @@ def rotate(forget_id: str | None = None) -> None:
                 raise VaultError(
                     f"Materialised file changed; refusing to delete it: {path}"
                 )
-            resolved_paths.append(path)
-
-        for path in resolved_paths:
-            path.unlink()
+            resolved_paths.append((path, path.stat().st_mode & 0o777))
     retired = retired_records()
     old_identity = IDENTITY.read_bytes()
     new_generation = current_generation() + 1
@@ -353,15 +365,54 @@ def rotate(forget_id: str | None = None) -> None:
         backup = private_root / "vault-previous"
         if backup.exists():
             raise VaultError(f"Unresolved previous rotation exists: {backup}")
-        combined = old_identity.rstrip() + b"\n" + identity_bytes
-        atomic_write(IDENTITY, combined, 0o600)
-        os.replace(VAULT, backup)
+
+        quarantined: list[tuple[Path, Path, int]] = []
+        old_vault_moved = False
+        new_vault_active = False
         try:
+            for path, mode in resolved_paths:
+                quarantine = path.with_name(
+                    f".{path.name}.veyra-forget-{secrets.token_hex(8)}"
+                )
+                os.replace(path, quarantine)
+                os.chmod(quarantine, 0o600)
+                quarantined.append((path, quarantine, mode))
+
+            combined = old_identity.rstrip() + b"\n" + identity_bytes
+            atomic_write(IDENTITY, combined, 0o600)
+            os.replace(VAULT, backup)
+            old_vault_moved = True
             os.replace(staged, VAULT)
+            new_vault_active = True
             atomic_write(IDENTITY, identity_bytes, 0o600)
+            for _, quarantine, _ in quarantined:
+                quarantine.unlink()
         except Exception:
-            if not VAULT.exists() and backup.exists():
-                os.replace(backup, VAULT)
+            rollback_errors = []
+            try:
+                if new_vault_active and VAULT.exists():
+                    os.replace(VAULT, temporary / "failed-new-vault")
+                if old_vault_moved and backup.exists():
+                    os.replace(backup, VAULT)
+                atomic_write(IDENTITY, old_identity, 0o600)
+            except OSError as exc:
+                rollback_errors.append(str(exc))
+
+            if forgotten_value is not None:
+                for original, quarantine, mode in reversed(quarantined):
+                    try:
+                        if quarantine.exists():
+                            os.replace(quarantine, original)
+                            os.chmod(original, mode)
+                        elif not original.exists():
+                            atomic_write(original, forgotten_value, mode)
+                    except OSError as exc:
+                        rollback_errors.append(str(exc))
+            if rollback_errors:
+                raise VaultError(
+                    "Vault rotation failed and rollback was incomplete: "
+                    + "; ".join(rollback_errors)
+                )
             raise
         shutil.rmtree(backup)
 
@@ -421,10 +472,18 @@ def parser() -> argparse.ArgumentParser:
     put_parser.add_argument("--scope", required=True)
     put_parser.add_argument("--fingerprint")
     put_parser.add_argument("--authorisation", required=True)
-    put_parser.add_argument(
+    source_tracking = put_parser.add_mutually_exclusive_group(required=True)
+    source_tracking.add_argument(
         "--track-source",
+        dest="track_source",
         action="store_true",
-        help="Record the source as a live materialised copy",
+        help="Record the source as a Veyra-controlled materialised copy",
+    )
+    source_tracking.add_argument(
+        "--leave-source-untracked",
+        dest="track_source",
+        action="store_false",
+        help="Do not treat the source as a Veyra-controlled copy",
     )
     put_parser.set_defaults(function=command_put)
 

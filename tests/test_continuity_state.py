@@ -20,6 +20,9 @@ class ContinuityStateTest(unittest.TestCase):
         self.state = self.root / "state" / "continuity-state.json"
         self.staging = self.root / "staging"
         self.staging.mkdir()
+        (self.staging / "memory-snapshot").mkdir()
+        self.working_memory = self.root / "working-memory"
+        self.working_memory.mkdir()
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -56,7 +59,13 @@ class ContinuityStateTest(unittest.TestCase):
             "recovery_in_progress",
         )
         self.assertEqual(
-            self.run_state("complete", "--staging", str(self.staging))["result"]["state"],
+            self.run_state(
+                "complete",
+                "--staging",
+                str(self.staging),
+                "--working-memory",
+                str(self.working_memory),
+            )["result"]["state"],
             "recovered",
         )
         self.assertEqual(self.state.stat().st_mode & 0o777, 0o600)
@@ -91,7 +100,43 @@ class ContinuityStateTest(unittest.TestCase):
 
     def test_complete_requires_recorded_begin(self):
         self.assertNotEqual(
-            self.run_state_failure("complete", "--staging", str(self.staging)).returncode,
+            self.run_state_failure(
+                "complete",
+                "--staging",
+                str(self.staging),
+                "--working-memory",
+                str(self.working_memory),
+            ).returncode,
+            0,
+        )
+
+    def test_recovered_requires_present_working_memory_and_same_host(self):
+        self.run_state("begin", "--staging", str(self.staging))
+        self.run_state(
+            "complete",
+            "--staging",
+            str(self.staging),
+            "--working-memory",
+            str(self.working_memory),
+        )
+        self.working_memory.rmdir()
+        self.assertEqual(
+            self.run_state("status")["result"]["state"], "recovery_required"
+        )
+
+        self.working_memory.mkdir()
+        record = json.loads(self.state.read_text(encoding="utf-8"))
+        record["hostname"] = "a-different-host"
+        self.state.write_text(json.dumps(record), encoding="utf-8")
+        self.assertEqual(
+            self.run_state("status")["result"]["state"], "recovery_required"
+        )
+
+    def test_begin_rejects_malformed_staging_tree(self):
+        malformed = self.root / "malformed"
+        malformed.mkdir()
+        self.assertNotEqual(
+            self.run_state_failure("begin", "--staging", str(malformed)).returncode,
             0,
         )
 
