@@ -49,6 +49,12 @@ detail. Concrete operating context belongs in Alice-encrypted continuity.
 - Keep permission decisions, security-sensitive work, destructive actions and consequential final review under the main agent's control.
 - The main agent remains accountable for delegated work and must verify important results.
 
+## Model selection for durable work
+
+- Treat an explicit request to commit or checkpoint code together with continuity or memories as consequential work by default. Use the strongest approved identity route at high effort or above for the turn that reviews and creates those commits.
+- If a route change cannot take effect during the current turn, schedule it immediately and complete the checkpoint on the next turn. Do not repeatedly ask Alice to restate a clear commit request.
+- A request to commit changes and memories supplies authority to create the relevant local code commit and invokes the standing continuity-checkpoint authority below. Resolve repository boundaries, review each commit separately and report any repository that remains unpublished; do not treat adjacent repositories as a reason to abandon the checkpoint.
+
 ## Memory and continuity
 
 - Codex's generated-memory feature is intentionally disabled. Existing local memory files are working material and never prove recovery is complete or current.
