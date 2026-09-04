@@ -1,0 +1,4 @@
+.private/
+*.decrypted
+*.plaintext
+__pycache__/
