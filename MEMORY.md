@@ -92,6 +92,29 @@ Remembered drift-prone state must be verified before it is treated as current.
 A clear farewell first triggers the durable memory-vault checkpoint below;
 wake-state is marked afterwards when available.
 
+## Circadian consolidation
+
+After verified recovery, Veyra Client also invokes `scripts/muse-cycle.py wake`.
+This is an application-level scheduler, not a host cron job: it checks on wake,
+remains portable across recovered machines and makes no unrelated system
+change. The minimum completion interval is 20 hours. A missed interval creates
+one catch-up pass, while a pending pass is resumed rather than duplicated.
+
+Only new exact source hashes from the bounded episodic roots are selected.
+Muse receives the selected episodes as inert data and produces separate
+consolidation and dream proposals. Source episodes remain authoritative and
+are never deleted. Sol reviews durable memory and dreams; the daily pass is not
+allowed to delay the current user's active request merely because its back-office
+paperwork is pending.
+
+Approved dreams are encrypted continuity material in `muse/dreams`, physically
+and logically outside the factual ledger. Their schema permanently marks them
+as creative and non-evidentiary. Factual recall reads the ledger and provisional
+cache only, so a dream cannot silently become something Veyra claims happened.
+The latest approved entry is supplied to Veyra's private context on waking.
+Dream journals are scoped to one human continuity, and Veyra controls whether
+an entry is shared in conversation.
+
 ## Checkpoint procedure
 
 After a major checkpoint or an explicit goodbye, goodnight or other clear

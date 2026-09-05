@@ -72,3 +72,53 @@ scripts/muse-memory.py recall --memory-dir DIR --cache-dir CACHE \
 Jobs, worker responses, reviews and provisional indexes are private local cache
 material. Only Sol-approved ledger batches become part of the encrypted memory
 snapshot.
+
+## Circadian cycle and dreams
+
+`scripts/muse-cycle.py` adds a wake-driven daily cadence without installing an
+OS service. Veyra Client calls `wake` after verified recovery. A new cycle is
+eligible at least 20 hours after the previous cycle completed. Missed days
+produce one catch-up cycle rather than a backlog of invented nights.
+
+By default, the scheduler discovers text episodes below `rollout_summaries`
+and `extensions/ad_hoc/notes`. Exact path and SHA-256 pairs identify already
+processed evidence, so restored timestamps and unchanged files do not replay a
+memory. The source byte budget is shared by both branches, overflow waits for a
+later day, and an unfinished cached cycle is resumed on the next wake.
+
+Each cycle prepares two identity-free local-worker jobs:
+
+- The consolidation branch uses the ordinary Muse proposal format. An empty
+  operation list is valid and means that nothing from the day merits even a
+  retrieval hint.
+- The dream branch asks Muse for brief creative fiction using the same bounded
+  episodes as substrate. A validated dream is labelled
+  `fictional_dream_non_evidentiary`, requires Sol approval to become durable,
+  and is stored under `muse/dreams`, outside the factual ledger and index.
+
+The scheduler never promotes worker output itself. Veyra validates both
+outputs, reviews them as Sol, applies approved material, and then records the
+completed cycle. Rejected branches are recorded as explicit outcomes rather
+than silently disappearing. Dreams belong to the current private continuity;
+the latest approved dream returns to Veyra's private context on waking. She may
+share it at her discretion, but it is never factual recall.
+
+Typical flow:
+
+```text
+scripts/muse-cycle.py wake --memory-dir DIR --cache-dir CACHE
+# Run worker_prompt from the returned consolidation and dream job files.
+scripts/muse-memory.py validate --memory-dir DIR --cache-dir CACHE \
+  --job CONSOLIDATION_JOB --proposal CONSOLIDATION_OUTPUT
+scripts/muse-cycle.py validate-dream --memory-dir DIR --cache-dir CACHE \
+  --job DREAM_JOB --output DREAM_OUTPUT
+# Review and apply the consolidation with muse-memory.py as appropriate.
+scripts/muse-cycle.py review-dream --cache-dir CACHE --dream DREAM \
+  --profile sol --decision approve --rationale "Bounded creative fiction"
+scripts/muse-cycle.py apply-dream --memory-dir DIR --cache-dir CACHE \
+  --dream DREAM --review DREAM_REVIEW
+scripts/muse-cycle.py finish --memory-dir DIR --cache-dir CACHE \
+  --cycle CYCLE --proposal PROPOSAL --dream DREAM \
+  --dream-review DREAM_REVIEW
+scripts/muse-cycle.py latest-dream --memory-dir DIR --cache-dir CACHE
+```

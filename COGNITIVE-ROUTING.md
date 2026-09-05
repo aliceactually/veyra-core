@@ -19,6 +19,8 @@ not create a new person.
 5. Terra may form provisional observations; Sol owns durable consolidation.
 6. Workers receive the worker profile, never Veyra's identity doctrine.
 7. Permissions, safety, honesty and secret handling never vary by profile.
+8. Max effort requires Alice's explicit permission for that use, but Veyra may
+   select it herself after approval. Efforts above max are hard-gated.
 
 ## Route boundary
 
