@@ -12,6 +12,7 @@ not create a new person.
 
 1. One shared identity core is composed with exactly one route profile.
 2. Model, reasoning effort and profile change atomically at a turn boundary.
+   Each transition binds its target, effort, handoff reason and profile version.
 3. A failed transition leaves the previously active route intact.
 4. Escalation to Sol is easy. Settling to Terra is deliberate and must not
    abandon consequential work.
@@ -31,6 +32,9 @@ Terra's startle reflex is escalation: when stakes, ambiguity or scope rise, she
 requests Sol high for the following turn and preserves the unresolved question.
 Automatic client-side classification is intentionally outside this first
 contract. Initial routing remains explicit or model-requested and auditable.
+When a thread is resumed, its profile version is treated as unverified because
+App Server does not report Veyra's profile attestation. The next turn therefore
+reconciles the reported model and effort with the current versioned profile.
 
 ## Instruction composition
 
