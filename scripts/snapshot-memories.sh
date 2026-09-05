@@ -8,6 +8,13 @@ readonly source_dir="${VEYRA_MEMORY_DIR:-${CODEX_MEMORY_DIR:-${HOME}/.codex/memo
 readonly target_file="${repo_dir}/continuity/current.tar.age"
 readonly recipient_file="${repo_dir}/crypto/alice-continuity.recipient"
 
+for required_tool in age gh python3 rg rsync tar; do
+    if ! command -v "${required_tool}" >/dev/null 2>&1; then
+        echo "Required checkpoint tool is unavailable: ${required_tool}" >&2
+        exit 9
+    fi
+done
+
 if [[ ! -d "${source_dir}" ]]; then
     echo "No local Veyra working memory exists yet: ${source_dir}" >&2
     exit 2

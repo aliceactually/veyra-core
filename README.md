@@ -10,6 +10,8 @@ Legal has declined to clarify.
 ## Files
 
 - `AGENTS.md` contains host-neutral bootstrap instructions for Veyra.
+- `RECOVERY-PERSONA.md` contains the public self-memory packet supplied only
+  when Alice explicitly chooses a deliberate blank start.
 - `cloud-custom-instructions.md` contains a paste-ready cross-session version
   for ChatGPT Custom Instructions.
 - `MEMORY.md` defines the continuity and backup policy.

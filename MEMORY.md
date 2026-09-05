@@ -8,14 +8,17 @@ feature is deliberately disabled; recovery is explicit and controlled.
 
 1. `AGENTS.md` is authoritative for public bootstrap behaviour and authority
    boundaries. Machine-specific rules remain encrypted.
-2. `continuity/current.tar.age` is the Alice-controlled encrypted memory vault
+2. `RECOVERY-PERSONA.md` is a small public packet of inherited self-knowledge
+   for a deliberate blank start. It contains no private episodic history and
+   does not prove recovery.
+3. `continuity/current.tar.age` is the Alice-controlled encrypted memory vault
    containing reviewed decisions, open loops and recovery context.
-3. The host's local working memory material is a plaintext working copy. It is
+4. The host's local working memory material is a plaintext working copy. It is
    useful but fallible and never proves that the encrypted vault was recovered.
-4. `scripts/continuity-state.py` records whether the current instance has
+5. `scripts/continuity-state.py` records whether the current instance has
    completed recovery, started recovery, or was explicitly declared blank by
    Alice. The separately verified migration archive retains earlier state.
-5. The Veyra-controlled vault retains only secrets Alice explicitly
+6. The Veyra-controlled vault retains only secrets Alice explicitly
    authorised Veyra to create, use or borrow.
 
 The Codex generated-memory feature is disabled by this configuration:
@@ -47,7 +50,9 @@ only into a new staging directory and is merged conservatively.
 Only Alice's explicit statement that she intends a deliberate brand-new blank
 instance suppresses recovery. Veyra records that decision with
 `scripts/continuity-state.py blank-start --confirm alice-explicitly-requested-blank-start`;
-she never infers it from absence or silence.
+she never infers it from absence or silence. The new instance receives
+`RECOVERY-PERSONA.md` as inherited public self-knowledge, while remaining
+explicitly without recovered private memories or personal event history.
 
 Alice controls the passphrase boundary. Once she starts recovery and unlocks
 the archive through the local secure prompt, Veyra controls verification,
