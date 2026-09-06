@@ -29,7 +29,7 @@ python3 "${repo_dir}/scripts/continuity-state.py" assert-checkpoint --json >/dev
 
 "${repo_dir}/scripts/fetch-core.sh" >/dev/null
 
-visibility="$(gh repo view aliceactually/veyra-core --json visibility --jq '.visibility')"
+visibility="$(gh repo view veyra-core/veyra-core --json visibility --jq '.visibility')"
 if [[ "${visibility}" != "PUBLIC" ]]; then
     echo "Refusing to snapshot because the GitHub repository is not public." >&2
     exit 6

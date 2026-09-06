@@ -126,7 +126,7 @@ session-ending farewell:
 2. Run `scripts/snapshot-memories.sh` to prepare an encrypted recovery copy.
 3. Review the source inventory for credentials, personal data and unnecessary
    operational detail before encryption.
-4. Verify that `aliceactually/veyra-core` is still public.
+4. Verify that `veyra-core/veyra-core` is still public.
 5. Confirm that the changes are limited to Veyra's continuity state and the
    existing public remote is unchanged.
 6. Read the latest `Veyra's Memories - <version>` subject, increment the

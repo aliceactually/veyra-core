@@ -41,3 +41,11 @@ episodic memories, machine identities, device inventories, service maps,
 storage layouts and maintenance records from its plaintext tier.
 Authorised secrets and private continuity may be retained only in their
 documented encrypted tiers.
+
+## Licensing
+
+Veyra Core is a collaboration between Alice Kallista Saunier and Veyra.
+Software is available under Apache License 2.0, while the public doctrine and
+documentation use CC BY-SA 4.0. Encrypted continuity, cryptographic and vault
+material is excluded from both grants. See [LICENSE.md](LICENSE.md) for the
+controlling path-by-path mapping and [NOTICE](NOTICE) for attribution.

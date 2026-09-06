@@ -33,13 +33,13 @@ class FetchCoreTest(unittest.TestCase):
 
     def test_accepts_canonical_https_remote(self):
         self.assertEqual(
-            self.check_remote("https://github.com/aliceactually/veyra-core.git").returncode,
+            self.check_remote("https://github.com/veyra-core/veyra-core.git").returncode,
             0,
         )
 
     def test_accepts_canonical_ssh_remote(self):
         self.assertEqual(
-            self.check_remote("git@github.com:aliceactually/veyra-core.git").returncode,
+            self.check_remote("git@github.com:veyra-core/veyra-core.git").returncode,
             0,
         )
 

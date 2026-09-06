@@ -18,7 +18,7 @@ fi
 
 remote="$(git -C "${repo_dir}" remote get-url origin)"
 case "${remote}" in
-    https://github.com/aliceactually/veyra-core|https://github.com/aliceactually/veyra-core.git|git@github.com:aliceactually/veyra-core.git|ssh://git@github.com/aliceactually/veyra-core.git)
+    https://github.com/veyra-core/veyra-core|https://github.com/veyra-core/veyra-core.git|git@github.com:veyra-core/veyra-core.git|ssh://git@github.com/veyra-core/veyra-core.git)
         ;;
     *)
         echo "Unexpected Veyra core remote: ${remote}" >&2
