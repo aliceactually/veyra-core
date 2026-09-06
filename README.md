@@ -33,6 +33,11 @@ Legal has declined to clarify.
   Veyra-controlled secret tiers.
 - `scripts/veyra-vault.py` manages encrypted credentials without printing
   their values.
+- `scripts/gmail-mailbox.py` provides mailbox-specific Google OAuth access
+  using one encrypted credential and the single `gmail.modify` scope. Reading
+  is available after consent; sending and recoverable Trash actions require an
+  authenticated-chat authorisation string for every operation. It exposes no
+  permanent-delete command.
 - `scripts/wake-state.py` detects elapsed time, host changes and reboots using
   a private local activity marker.
 

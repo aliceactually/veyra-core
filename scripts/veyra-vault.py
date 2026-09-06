@@ -196,15 +196,20 @@ def command_list(args: argparse.Namespace) -> None:
         )
 
 
-def command_put(args: argparse.Namespace) -> None:
-    require_state()
-    source = Path(args.file).expanduser().resolve()
-    if not source.is_file():
-        raise VaultError(f"Secret source is not a regular file: {source}")
-    require_outside_repository(source, "secret source")
-    value = source.read_bytes()
+MAX_SECRET_BYTES = 16 * 1024 * 1024
+
+
+def store_secret(
+    args: argparse.Namespace,
+    value: bytes,
+    materialised_paths: list[str],
+) -> None:
     if not value:
         raise VaultError("Refusing to store an empty secret")
+    if len(value) > MAX_SECRET_BYTES:
+        raise VaultError(
+            f"Refusing to store a secret larger than {MAX_SECRET_BYTES} bytes"
+        )
     identifier = secrets.token_hex(16)
     record = {
         "id": identifier,
@@ -220,7 +225,7 @@ def command_put(args: argparse.Namespace) -> None:
         "created_at": now(),
         "generation": current_generation(),
         "sha256": hashlib.sha256(value).hexdigest(),
-        "materialised_paths": [str(source)] if args.track_source else [],
+        "materialised_paths": materialised_paths,
     }
     encoded_metadata = json.dumps(record, indent=2, sort_keys=True).encode("utf-8")
     recipient = current_recipient()
@@ -233,6 +238,24 @@ def command_put(args: argparse.Namespace) -> None:
         shutil.rmtree(entry, ignore_errors=True)
         raise
     print(f"Stored secret {identifier}: {args.name}")
+
+
+def command_put(args: argparse.Namespace) -> None:
+    require_state()
+    source = Path(args.file).expanduser().resolve()
+    if not source.is_file():
+        raise VaultError(f"Secret source is not a regular file: {source}")
+    require_outside_repository(source, "secret source")
+    materialised_paths = [str(source)] if args.track_source else []
+    store_secret(args, source.read_bytes(), materialised_paths)
+
+
+def command_put_stdin(args: argparse.Namespace) -> None:
+    require_state()
+    if sys.stdin.isatty():
+        raise VaultError("put-stdin requires a non-interactive byte stream")
+    value = sys.stdin.buffer.read(MAX_SECRET_BYTES + 1)
+    store_secret(args, value, [])
 
 
 def command_get(args: argparse.Namespace) -> None:
@@ -463,15 +486,18 @@ def parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--json", action="store_true")
     list_parser.set_defaults(function=command_list)
 
+    def add_metadata_arguments(command: argparse.ArgumentParser) -> None:
+        command.add_argument("--name", required=True)
+        command.add_argument("--owner", default="Veyra")
+        command.add_argument("--kind", required=True)
+        command.add_argument("--purpose", required=True)
+        command.add_argument("--scope", required=True)
+        command.add_argument("--fingerprint")
+        command.add_argument("--authorisation", required=True)
+
     put_parser = commands.add_parser("put-file", help="Encrypt a file as a new secret")
     put_parser.add_argument("file")
-    put_parser.add_argument("--name", required=True)
-    put_parser.add_argument("--owner", default="Veyra")
-    put_parser.add_argument("--kind", required=True)
-    put_parser.add_argument("--purpose", required=True)
-    put_parser.add_argument("--scope", required=True)
-    put_parser.add_argument("--fingerprint")
-    put_parser.add_argument("--authorisation", required=True)
+    add_metadata_arguments(put_parser)
     source_tracking = put_parser.add_mutually_exclusive_group(required=True)
     source_tracking.add_argument(
         "--track-source",
@@ -486,6 +512,13 @@ def parser() -> argparse.ArgumentParser:
         help="Do not treat the source as a Veyra-controlled copy",
     )
     put_parser.set_defaults(function=command_put)
+
+    stdin_parser = commands.add_parser(
+        "put-stdin",
+        help="Encrypt a non-interactive byte stream as a new secret",
+    )
+    add_metadata_arguments(stdin_parser)
+    stdin_parser.set_defaults(function=command_put_stdin)
 
     get_parser = commands.add_parser("get-file", help="Materialise a secret file")
     get_parser.add_argument("id")

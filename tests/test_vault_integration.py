@@ -71,6 +71,15 @@ class VaultIntegrationTest(unittest.TestCase):
             text=True,
         )
 
+    def vault_command_bytes(self, *arguments, value, check=True):
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), *arguments],
+            env=self.environment,
+            input=value,
+            check=check,
+            capture_output=True,
+        )
+
     def test_store_materialise_inventory_forget_and_rotate(self):
         secret_value = b"synthetic-private-key-material\n"
         source = self.root / "source.key"
@@ -149,6 +158,52 @@ class VaultIntegrationTest(unittest.TestCase):
         self.assertEqual(active, [])
         self.assertEqual(historical[0]["status"], "forgotten")
         self.assertNotIn("synthetic-private-key-material", json.dumps(historical))
+
+    def test_store_from_stdin_without_plaintext_materialisation(self):
+        secret_value = b"clipboard-secret-without-a-plaintext-file\n"
+        stored = self.vault_command_bytes(
+            "put-stdin",
+            "--name",
+            "Clipboard handoff",
+            "--kind",
+            "test-token",
+            "--purpose",
+            "Integration testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Authorised by the integration test",
+            value=secret_value,
+        )
+        identifier = stored.stdout.decode().split()[2].rstrip(":")
+
+        records = json.loads(self.vault_command("list", "--json").stdout)
+        self.assertEqual(records[0]["id"], identifier)
+        self.assertEqual(records[0]["materialised_paths"], [])
+        self.assertNotIn(secret_value.strip(), stored.stdout)
+
+        output = self.root / "stdin-restored.key"
+        self.vault_command("get-file", identifier, str(output))
+        self.assertEqual(output.read_bytes(), secret_value)
+
+    def test_store_from_stdin_rejects_empty_input(self):
+        failed = self.vault_command_bytes(
+            "put-stdin",
+            "--name",
+            "Empty",
+            "--kind",
+            "test-token",
+            "--purpose",
+            "Integration testing",
+            "--scope",
+            "Temporary test repository",
+            "--authorisation",
+            "Authorised by the integration test",
+            value=b"",
+            check=False,
+        )
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertNotIn(b"clipboard-secret", failed.stderr)
 
     def test_failed_rotation_preserves_tracked_plaintext_and_old_vault(self):
         first_source = self.root / "first.key"

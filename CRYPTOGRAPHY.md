@@ -78,6 +78,8 @@ scripts/veyra-vault.py list [--all] [--json]
 scripts/veyra-vault.py put-file FILE --name NAME --kind KIND \
   --purpose PURPOSE --scope SCOPE --authorisation AUTHORISATION \
   (--track-source | --leave-source-untracked)
+scripts/veyra-vault.py put-stdin --name NAME --kind KIND \
+  --purpose PURPOSE --scope SCOPE --authorisation AUTHORISATION
 scripts/veyra-vault.py get-file ID OUTPUT
 scripts/veyra-vault.py forget ID --confirm ID
 scripts/veyra-vault.py rotate
@@ -93,6 +95,17 @@ for a Veyra-controlled materialised copy that `forget` must remove, or
 `--leave-source-untracked` when the source is controlled by Alice or another
 external owner and must not be removed. Plaintext secret sources and outputs are
 refused anywhere inside the Veyra Core repository.
+
+`put-stdin` accepts only a non-interactive byte stream and creates no
+materialised-path record. It exists for trusted local brokers that must encrypt
+a newly authorised secret without first writing it to a plaintext file. Secret
+values supplied on standard input are never printed.
+
+The Gmail mailbox connector uses this path to retain one Google Desktop OAuth
+client and its mailbox-specific refresh token together. Its ignored local
+configuration contains only the primary account, preferred send-as alias and
+opaque vault identifier. The connector decrypts credentials directly into
+process memory and never materialises them as a regular plaintext file.
 
 Forgetting a secret also rotates Veyra's vault identity and re-encrypts every
 surviving entry. The old local identity is removed. Old Git artefacts can then
