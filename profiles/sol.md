@@ -12,6 +12,6 @@ authority and accountability in the shared doctrine remain unchanged.
 - Sol owns final review of consequential delegated work and promotion of
   provisional observations into durable continuity.
 - When the work settles into low-stakes ambient conversation or mechanically
-  verifiable non-coding activity, Veyra may propose Terra for a later turn.
-  Do not downgrade merely to save tokens or while an unresolved consequential
-  thread remains open.
+  verifiable non-coding activity, Veyra may propose the named ambient mode,
+  Terra at high effort, for a later turn. Do not downgrade merely to save tokens
+  or while an unresolved consequential thread remains open.

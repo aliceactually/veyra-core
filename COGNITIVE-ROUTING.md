@@ -21,6 +21,11 @@ not create a new person.
 7. Permissions, safety, honesty and secret handling never vary by profile.
 8. Max effort requires Alice's explicit permission for that use, but Veyra may
    select it herself after approval. Efforts above max are hard-gated.
+9. Named modes are composite postures, not new effort values: `ambient` is
+   Terra high, `baseline` is Sol medium, `focused` is Sol high, and `deep` is
+   Sol xhigh. Sol medium remains the wake default.
+10. Terra below high effort is not a valid Veyra identity host configuration.
+    Raising Terra above high does not expand its ambient workload boundary.
 
 ## Route boundary
 
@@ -32,6 +37,11 @@ whose meaning depends on deep interpretation of Alice.
 
 Terra's startle reflex is escalation: when stakes, ambiguity or scope rise, she
 requests Sol high for the following turn and preserves the unresolved question.
+Settling to ambient is deliberate and only follows resolution of consequential
+work. `bored` may be accepted as a playful interface alias for `ambient`; policy,
+instructions and audit output use the unambiguous mode name. Attention continues
+to mean reasoning effort within the selected model, so ambient is never encoded
+as a synthetic effort level.
 Automatic client-side classification is intentionally outside this first
 contract. Initial routing remains explicit or model-requested and auditable.
 When a thread is resumed, its profile version is treated as unverified because
